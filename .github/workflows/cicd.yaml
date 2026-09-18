@@ -1,61 +1,44 @@
-name: CI/CD Pipeline
+name: EC2 Automated Continuous Deployment
 
 on:
   push:
     branches:
       - main
       - master
-  pull_request:
-    branches:
-      - main
-      - master
 
 jobs:
-  # ==========================================
-  # 1. Lint & Code Verification Job
-  # ==========================================
-  lint-and-test:
-    name: Lint & Code Verification
-    runs-on: ubuntu-latest
+  deploy:
+    name: Deploy to Self-Hosted EC2 Runner
+    runs-on: self-hosted
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
-
-      - name: Install Dependencies
+      - name: Create .env File from GitHub Secrets
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Syntax & Compilation Verification
-        run: |
-          python -m py_compile backend.py app.py
-
-  # ==========================================
-  # 2. Docker Build Job
-  # ==========================================
-  docker-build:
-    name: Build Docker Image
-    needs: lint-and-test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+          echo "TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}" >> .env
 
       - name: Build Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: false
-          tags: prodagenticai:latest
+        run: |
+          docker build -t prodagenticai:latest .
+
+      - name: Stop & Remove Old Container
+        run: |
+          docker rm -f prodagenticai_app || true
+
+      - name: Launch Updated Application Container
+        run: |
+          docker run -d \
+            --name prodagenticai_app \
+            --restart unless-stopped \
+            -p 8501:8501 \
+            --env-file .env \
+            prodagenticai:latest
+
+      - name: Verify Deployment Health
+        run: |
+          sleep 5
+          docker ps --filter "name=prodagenticai_app"
+          curl --fail http://localhost:8501/_stcore/health || exit 1
