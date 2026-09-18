@@ -1,0 +1,31 @@
+# Environment Variables & Secrets
+.env
+*.env
+.env.*
+
+# SQLite Database & Checkpoint Files
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+chatbot_memory.sqlite*
+
+# FAISS Vector Index Directory
+faiss_index/
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# IDE & OS Generated Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
