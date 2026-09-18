@@ -10,6 +10,7 @@ jobs:
   deploy:
     name: Deploy to Self-Hosted EC2 Runner
     runs-on: self-hosted
+    environment: s
 
     steps:
       - name: Checkout Code

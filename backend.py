@@ -45,7 +45,14 @@ GLOBAL_VECTORSTORE = {"vs": None, "name": None}
 # ==========================================
 
 # 2.1 Tavily Search Tool (Web Search Integration)
-tavily_tool = TavilySearchResults(max_results=3)
+if os.getenv("TAVILY_API_KEY"):
+    tavily_tool = TavilySearchResults(max_results=3)
+else:
+    @tool
+    def tavily_tool(query: str) -> str:
+        """Searches the web for current information."""
+        return "TAVILY_API_KEY is not configured in environment variables. Please add TAVILY_API_KEY to your environment secrets."
+
 
 
 # 2.2 Calculator Tool (with Human-in-the-Loop Interrupt)
